@@ -1,34 +1,40 @@
 # dependencies (bun install)
-node_modules
+node_modules/
 
 # output
-out
-dist
+dist/
+out/
 *.tgz
 
 # code coverage
-coverage
+coverage/
 *.lcov
 
 # logs
-logs
-_.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+logs/
+*.log
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # dotenv environment variable files
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env.*
+backend/.env
+frontend/.env
 
 # caches
 .eslintcache
-.cache
+.cache/
 *.tsbuildinfo
 
-# IntelliJ based IDEs
-.idea
-
-# Finder (MacOS) folder config
+# IDEs
+.idea/
+.vscode/
 .DS_Store
+
+# SocietyApp Specifics
+backend/src/db/society.db
+society.db
+build_error.txt
+
+# Uploads
+uploads/

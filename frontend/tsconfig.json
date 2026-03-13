@@ -23,7 +23,7 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./frontend/src/*"]
+      "@/*": ["./src/*"]
     },
 
     // Some stricter flags (disabled by default)

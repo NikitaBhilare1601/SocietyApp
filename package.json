@@ -1,12 +1,16 @@
 {
-  "name": "newsocietyapp---copy",
-  "module": "index.ts",
-  "type": "module",
+  "name": "society-app",
+  "version": "0.1.0",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+  "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:backend": "bun --cwd backend run dev",
+    "dev:frontend": "bun --cwd frontend run dev",
+    "build:frontend": "cd frontend && bun compile.ts",
+    "start": "bun --cwd backend run start"
   }
 }
