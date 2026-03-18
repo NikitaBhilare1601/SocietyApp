@@ -553,22 +553,6 @@ const Members = () => {
     }
   };
 
-  const handleForwardWhatsApp = (member: Member) => {
-    const society = societies.find(s => s.id === member.societyId);
-    const recipientNumber = society?.whatsappNumber || "";
-
-    const message = `📍 *Member Profile Detail*\n---\n*Name*: ${member.name}\n*Details*: ${member.wingName}-${member.flatNumber} (${member.societyName})\n*Mobile*: ${member.mobileNumber}\n*Type*: ${member.memberType}\n*Status*: ${member.status || "Pending"}`;
-
-    const cleanTo = recipientNumber.replace(/\D/g, '');
-    const waNumber = (cleanTo.startsWith('91') || cleanTo === "") ? cleanTo : `91${cleanTo}`;
-    const encodedMsg = encodeURIComponent(message);
-
-    const url = waNumber
-      ? `https://wa.me/${waNumber}?text=${encodedMsg}`
-      : `https://wa.me/?text=${encodedMsg}`;
-
-    window.open(url, '_blank');
-  };
 
   return (
     <Layout>
@@ -757,17 +741,6 @@ const Members = () => {
                               onClick={() => handleEdit(member)}
                             >
                               <Edit2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                          {(isAdmin || role === "Society Admin") && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
-                              onClick={() => handleForwardWhatsApp(member)}
-                              title="Forward to Society Admin"
-                            >
-                              <Phone className="w-4 h-4" />
                             </Button>
                           )}
                           {member.documents && (

@@ -13,6 +13,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
 
   // Close sidebar on route change
@@ -53,10 +54,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // }, []);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden font-sans">
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex">
-        <Sidebar onStartTour={startTour} />
+      <div className={`hidden md:flex transition-all duration-300 ease-in-out ${isSidebarCollapsed ? "w-20" : "w-64"}`}>
+        <Sidebar 
+          onStartTour={startTour} 
+          isCollapsed={isSidebarCollapsed} 
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+        />
       </div>
 
       {/* Mobile Sidebar (Drawer) */}

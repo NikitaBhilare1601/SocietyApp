@@ -32,7 +32,8 @@ const Settings = () => {
   // Determine default tab
   const getDefaultTab = () => {
     if (showPermissionMatrix) return "menus";
-    return "profile";
+    if (isSuperAdmin || isSocietyAdmin) return "roles";
+    return "users"; // Fallback
   };
 
   const [activeTab, setActiveTab] = useState(getDefaultTab());
@@ -59,16 +60,6 @@ const Settings = () => {
         <div className="p-4 md:p-8 space-y-6">
           {/* Horizontal Tabs */}
           <div className="flex items-center gap-2 border-b border-border overflow-x-auto">
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === "profile"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-                }`}
-            >
-              <User className="w-4 h-4" />
-              My Profile
-            </button>
 
             {showPermissionMatrix && (
               <button
@@ -110,7 +101,7 @@ const Settings = () => {
 
           {/* Content Area */}
           <div className="w-full">
-            {activeTab === "profile" && <UserProfile currentUser={currentUser} />}
+            {activeTab === "profile" && <div className="p-4 text-muted-foreground italic">Please use the dedicated Profile page.</div>}
             {activeTab === "roles" && (isSuperAdmin || isSocietyAdmin) && <RoleMaster success={success} toastError={toastError} />}
             {activeTab === "menus" && showPermissionMatrix && <MenuMaster success={success} toastError={toastError} />}
             {activeTab === "users" && <UserManagement success={success} toastError={toastError} />}
@@ -121,52 +112,6 @@ const Settings = () => {
   );
 };
 
-const UserProfile = ({ currentUser }: { currentUser: any }) => {
-  return (
-    <Card className="border-border bg-card">
-      <CardHeader>
-        <CardTitle className="text-foreground">My Profile</CardTitle>
-        <CardDescription className="text-muted-foreground">View your account details</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label className="text-foreground">Full Name</Label>
-            <div className="p-3 bg-muted/30 rounded border border-border text-foreground">
-              {currentUser.fullName || "N/A"}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-foreground">Email Address</Label>
-            <div className="p-3 bg-muted/30 rounded border border-border text-foreground">
-              {currentUser.email || "N/A"}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-foreground">Role</Label>
-            <div className="p-3 bg-muted/30 rounded border border-border text-foreground">
-              {currentUser.roleName || "N/A"}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-foreground">Society ID</Label>
-            <div className="p-3 bg-muted/30 rounded border border-border text-foreground">
-              {currentUser.societyId || "N/A"}
-            </div>
-          </div>
-          {currentUser.memberId && (
-            <div className="space-y-2">
-              <Label className="text-foreground">Member ID</Label>
-              <div className="p-3 bg-muted/30 rounded border border-border text-foreground">
-                {currentUser.memberId}
-              </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
 
 const RoleMaster = ({ success, toastError }: { success: any, toastError: any }) => {
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");

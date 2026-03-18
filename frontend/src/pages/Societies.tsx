@@ -24,8 +24,8 @@ interface Society {
   id: number;
   name: string;
   numberOfWings: number;
-  whatsappNumber?: string;
-  isWhatsApp?: number;
+  whatsappNumber: string;
+  isWhatsApp: number;
 }
 
 const Societies = () => {
@@ -456,7 +456,7 @@ const Societies = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="whatsappNumber">Mobile Number</Label>
+                <Label htmlFor="whatsappNumber">Society Admin Number</Label>
                 <div className="flex items-center gap-4 mt-1">
                   <Input
                     id="whatsappNumber"
@@ -473,7 +473,7 @@ const Societies = () => {
                       onChange={e => setFormData({ ...formData, isWhatsApp: e.target.checked })}
                       className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
                     />
-                    <Label htmlFor="isWhatsApp" className="cursor-pointer text-xs">WhatsApp?</Label>
+                    <Label htmlFor="isWhatsApp" className="cursor-pointer text-xs">WhatsApp</Label>
                   </div>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1 italic">

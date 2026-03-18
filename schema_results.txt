@@ -1,0 +1,3 @@
+COLUMNS: id, fullName, email, username, password, roleId, societyId, memberId, mobileNumber, status, created_at, address, profilePicture
+USER: 1 | admin@society.com | SOC: null | ROLE: 1 | NAME: Admin 
+USER: 2 | secretary@society.com | SOC: 1 | ROLE: 2 | NAME: Society Secretary

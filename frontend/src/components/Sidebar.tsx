@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Building2, Users, FileText, Settings, LogOut, Home, User, Bell, Layers, Upload, ScrollText, X, Compass, CircleHelp } from "lucide-react";
+import { Building2, Users, FileText, Settings, LogOut, Home, User, Bell, Layers, Upload, ScrollText, X, Compass, CircleHelp, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 
@@ -34,7 +34,19 @@ const removeWhiteBackground = (src: string, threshold = 245): Promise<string> =>
     img.src = src;
   });
 
-const Sidebar = ({ className, onClose, onStartTour }: { className?: string, onClose?: () => void, onStartTour?: () => void }) => {
+const Sidebar = ({ 
+  className, 
+  onClose, 
+  onStartTour,
+  isCollapsed,
+  onToggleCollapse
+}: { 
+  className?: string, 
+  onClose?: () => void, 
+  onStartTour?: () => void,
+  isCollapsed?: boolean,
+  onToggleCollapse?: () => void
+}) => {
   const location = useLocation();
   const [user, setUser] = useState(() => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -53,6 +65,22 @@ const Sidebar = ({ className, onClose, onStartTour }: { className?: string, onCl
       active = false;
     };
   }, [logoSrc]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      setUser(storedUser);
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    // Also listen for custom events if the same window is updated
+    window.addEventListener("userProfileUpdate", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("userProfileUpdate", handleStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -150,19 +178,43 @@ const Sidebar = ({ className, onClose, onStartTour }: { className?: string, onCl
     { path: "/settings", label: "Settings", icon: Settings, permission: "settings" },
   ];
 
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isProfileOpen) {
+        const target = event.target as HTMLElement;
+        const isTrigger = target.closest('[data-tour-id="user-profile"]');
+        const isDropdown = target.closest('[data-tour-id="profile-dropdown"]');
+        
+        if (!isTrigger && !isDropdown) {
+          setIsProfileOpen(false);
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isProfileOpen]);
+
   return (
-    <aside className={`w-64 bg-sidebar flex flex-col h-screen border-r border-sidebar-border transition-colors ${className || ''}`} data-tour="sidebar">
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-sidebar flex flex-col h-screen border-r border-sidebar-border transition-all duration-300 ease-in-out ${className || ''}`} data-tour="sidebar">
       {/* Logo Section */}
-      <div className="h-16 flex items-center px-6 border-b border-border justify-between">
-        <Link to="/dashboard" className="flex items-center gap-2" onClick={onClose}>
-          <div className="w-10 h-10 flex items-center justify-center">
+      <div className={`h-16 flex items-center border-b border-border ${isCollapsed ? 'justify-center px-0' : 'justify-between px-6'}`}>
+        <div 
+          className="flex items-center gap-2 cursor-pointer transition-all duration-300" 
+          onClick={onToggleCollapse}
+          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
             <img src={logoUrl || logoSrc} alt="Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="text-xl font-bold text-foreground">
-            Society Manager
-          </span>
-        </Link>
-        {onClose && (
+          {!isCollapsed && (
+            <span className="text-xl font-bold text-foreground truncate animate-in fade-in duration-500">
+              Society Manager
+            </span>
+          )}
+        </div>
+        {!isCollapsed && onClose && (
           <button onClick={onClose} className="md:hidden p-2 text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
@@ -170,7 +222,7 @@ const Sidebar = ({ className, onClose, onStartTour }: { className?: string, onCl
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto" data-tour-id="sidebar-nav">
+      <nav className={`flex-1 ${isCollapsed ? 'px-2' : 'px-4'} py-6 space-y-2 overflow-y-auto no-scrollbar`} data-tour-id="sidebar-nav">
         {menuItems.map((item) => {
           return (
             hasPermission(item.permission) && (
@@ -179,13 +231,14 @@ const Sidebar = ({ className, onClose, onStartTour }: { className?: string, onCl
                 to={item.path}
                 onClick={onClose}
                 data-tour-id={`menu-${item.label.toLowerCase().replace(" ", "-")}`}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${isActive(item.path)
-                  ? "bg-primary text-primary-foreground"
+                title={isCollapsed ? item.label : ""}
+                className={`flex items-center gap-3 rounded-md transition-all duration-200 ${isCollapsed ? 'justify-center py-3' : 'px-3 py-2'} ${isActive(item.path)
+                  ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }`}
               >
-                <item.icon className="w-5 h-5" />
-                <span className="text-sm font-medium">{item.label}</span>
+                <item.icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} transition-all`} />
+                {!isCollapsed && <span className="text-sm font-medium whitespace-nowrap overflow-hidden animate-in slide-in-from-left-2 duration-300">{item.label}</span>}
               </Link>
             )
           );
@@ -193,17 +246,68 @@ const Sidebar = ({ className, onClose, onStartTour }: { className?: string, onCl
       </nav>
 
       {/* Footer User Info */}
-      <div className="p-4 border-t border-border space-y-2">
-        <div className="flex items-center justify-end px-2">
-        </div>
+      <div className="p-4 border-t border-sidebar-border mt-auto">
+        <div className="relative">
+          {/* Profile Dropdown */}
+          {isProfileOpen && (
+            <div 
+              data-tour-id="profile-dropdown"
+              style={!isCollapsed ? { bottom: 'calc(100% + 12px)', left: 0, right: 0 } : { left: 'calc(100% + 16px)', bottom: 0 }}
+              className={`absolute z-[100] bg-card border border-border shadow-[0_-10px_40px_rgba(0,0,0,0.4)] animate-in slide-in-from-bottom-2 duration-200 overflow-visible rounded-2xl min-w-[240px]`}
+            >
+              {/* Dropdown Menu Items */}
+              <div className="p-2 space-y-1">
+                <Link 
+                  to="/profile" 
+                  onClick={() => setIsProfileOpen(false)} 
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-xl transition-all duration-200 group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <span className="font-bold">My Profile</span>
+                </Link>
+                <div className="h-px bg-border/50 my-2 mx-1.5" />
+                <button 
+                  onClick={handleLogout} 
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all duration-200 group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
+                    <LogOut className="w-4 h-4" />
+                  </div>
+                  <span className="font-bold">Logout</span>
+                </button>
+              </div>
+            </div>
+          )}
 
-        <div className="flex items-center gap-3 px-2 py-2" data-tour-id="user-profile">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm border border-primary/20">
-            {(user.fullName || user.name || 'U').charAt(0)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user.fullName || user.name || 'User'}</p>
-            <p className="text-[10px] text-muted-foreground truncate">{user.roleName || 'Role'}</p>
+          {/* Profile Section Trigger */}
+          <div 
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className={`flex items-center gap-3 p-2 w-full rounded-2xl cursor-pointer hover:bg-accent transition-all duration-300 group border border-transparent hover:border-border/50 ${isCollapsed ? 'justify-center' : ''}`} 
+            data-tour-id="user-profile"
+            title={isCollapsed ? (user.fullName || user.name || 'User') : ""}
+          >
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-black text-base border border-primary/20 flex-shrink-0 shadow-sm group-hover:scale-105 transition-all duration-500">
+                {(user.fullName || user.name || 'U').charAt(0)}
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-sidebar rounded-full shadow-md" />
+            </div>
+            
+            {!isCollapsed && (
+              <>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors duration-300">
+                    {user.fullName || user.name || 'User'}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate uppercase tracking-[0.15em] font-black mt-0.5 opacity-40 group-hover:opacity-80 transition-all duration-300">
+                    {user.roleName || 'Role'}
+                  </p>
+                </div>
+                <ChevronUp className={`w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-all duration-500 ${isProfileOpen ? 'rotate-180 opacity-100' : 'opacity-40'}`} />
+              </>
+            )}
           </div>
         </div>
       </div>

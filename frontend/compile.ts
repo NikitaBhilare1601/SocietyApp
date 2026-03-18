@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
-import { existsSync } from "node:fs";
+import { existsSync, cpSync, watch } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 console.log("\n🚀 Starting build process...\n");
 
@@ -12,21 +13,18 @@ if (existsSync(outdir)) {
   await rm(outdir, { recursive: true, force: true });
 }
 
-// Build Tailwind CSS using native Node execution
-console.log("🎨 Processing CSS with Tailwind...");
-import { execSync } from "node:child_process";
-try {
-  execSync("node ./node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/styles/globals.css -o ./dist/index.css --minify", { stdio: "inherit" });
-} catch (error) {
-  console.error("❌ Tailwind build failed!");
-  process.exit(1);
-}
-
-import { cpSync, watch } from "node:fs";
-
 const build = async () => {
   const start = performance.now();
   
+  // Build Tailwind CSS using native Node execution on every build
+  console.log("🎨 Processing CSS with Tailwind...");
+  try {
+    execSync("node ./node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/styles/globals.css -o ./dist/index.css --minify", { stdio: "inherit" });
+  } catch (error) {
+    console.error("❌ Tailwind build failed!");
+    // Don't exit here to allow JS build to still try, but return failure
+  }
+
   // Important: Convert backslashes to forward slashes for Bun.build on Windows
   const entrypoints = [...new Bun.Glob("**.html").scanSync("src")]
     .map(a => "./" + path.join("src", a).replaceAll("\\", "/"))

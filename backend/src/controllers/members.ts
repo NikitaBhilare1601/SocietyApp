@@ -1,4 +1,4 @@
-import { Member } from "../models";
+import { Member, Society } from "../models";
 import { createLog, getActorFromHeaders } from "../services/logger";
 import { notifyWhatsApp } from "../services/whatsapp";
 import { config } from "../../../config/env";
@@ -277,27 +277,73 @@ export const MemberController = {
       const actor = getActorFromHeaders(req);
       const { actorRole: role, societyId } = actor;
 
-      if (role !== "Society Admin" && role !== "Super Admin") return Response.json({ success: false, message: "Unauthorized" }, { status: 403 });
+      console.log("[MemberController] bulkCreate started. Actor:", actor);
+
+      if (role !== "Society Admin" && role !== "Super Admin") {
+        return Response.json({ success: false, message: "Unauthorized" }, { status: 403 });
+      }
 
       const membersToCreate = await req.json();
-      if (!Array.isArray(membersToCreate)) return Response.json({ success: false, message: "Request body must be an array" }, { status: 400 });
+      console.log(`[MemberController] Received ${membersToCreate?.length} members to import.`);
+
+      if (!Array.isArray(membersToCreate)) {
+        return Response.json({ success: false, message: "Request body must be an array" }, { status: 400 });
+      }
 
       let successfulImports = 0;
-      for (const member of membersToCreate) {
+      let failedImports = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < membersToCreate.length; i++) {
+        const member = membersToCreate[i];
         try {
-          const memberSocietyId = role === "Society Admin" ? societyId : member.societyId;
-          if (!memberSocietyId) continue;
+          let memberSocietyId = role === "Society Admin" ? societyId : member.societyId;
+          
+          // Fallback: If no societyId, try to find by name
+          if (!memberSocietyId && member.societyName) {
+            console.log(`[MemberController] Society ID missing for row ${i+1}. Attempting to resolve by name: "${member.societyName}"`);
+            const foundSoc = await Society.findOne({ 
+              where: { name: String(member.societyName).trim() } 
+            });
+            if (foundSoc) {
+              memberSocietyId = foundSoc.id;
+              console.log(`[MemberController] Resolved to Society ID: ${memberSocietyId}`);
+            } else {
+              // Last ditch: if there's only one society in the system, use it
+              const allSocieties = await Society.findAll();
+              if (allSocieties.length === 1) {
+                memberSocietyId = allSocieties[0]!.id;
+                console.log(`[MemberController] No name match found, but system only has one society. Defaulting to: ${allSocieties[0]!.name} (${memberSocietyId})`);
+              }
+            }
+          }
+
+          if (!member.name || String(member.name).trim() === "") {
+            console.warn(`[MemberController] Member at index ${i} skipped: name missing.`);
+            errors.push(`Row ${i + 1}: Member Name is missing.`);
+            failedImports++;
+            continue;
+          }
+
+          if (!memberSocietyId) {
+            console.warn(`[MemberController] Member at index ${i} skipped: could not resolve societyId.`);
+            errors.push(`Row ${i + 1}: Could not determine Society for "${member.name}". Please ensure Society Name is correct in Excel.`);
+            failedImports++;
+            continue;
+          }
+
+          console.log(`[MemberController] Importing member: ${member.name} for societyId: ${memberSocietyId}`);
 
           const newMember = await Member.create({
-            name: member.name || "",
-            societyId: memberSocietyId,
-            societyName: member.societyName || "",
-            wingName: member.wingName || "",
-            flatNumber: member.flatNumber || "",
+            name: String(member.name || "").trim(),
+            societyId: Number(memberSocietyId),
+            societyName: String(member.societyName || "").trim(),
+            wingName: String(member.wingName || "").trim(),
+            flatNumber: String(member.flatNumber || "").trim(),
             memberType: member.memberType || "Owner",
             ownerName: member.memberType?.toLowerCase() === "tenant" ? (member.ownerName || null) : null,
-            gender: member.gender || "",
-            mobileNumber: member.mobileNumber || "",
+            gender: String(member.gender || "Male").trim(),
+            mobileNumber: String(member.mobileNumber || "").trim(),
             email: member.email || null,
             vehicleType: member.vehicleType || null,
             vehicleNumber: member.vehicleNumber || null,
@@ -310,21 +356,45 @@ export const MemberController = {
           });
 
           createLog({
-            action: "import", entityType: "member", entityId: newMember.id, entityName: member.name || "",
-            actorUserId: actor.actorUserId, actorMemberId: actor.actorMemberId, actorName: actor.actorName,
-            actorRole: actor.actorRole, societyId: memberSocietyId,
+            action: "import", 
+            entityType: "member", 
+            entityId: newMember.id, 
+            entityName: member.name || "",
+            actorUserId: actor.actorUserId, 
+            actorMemberId: actor.actorMemberId, 
+            actorName: actor.actorName,
+            actorRole: actor.actorRole, 
+            societyId: Number(memberSocietyId),
           });
 
-          notifyWhatsApp("create", "member", { name: member.name || "", mobileNumber: member.mobileNumber || "", societyName: member.societyName || "", societyId: memberSocietyId });
+          notifyWhatsApp("create", "member", { 
+            name: member.name || "", 
+            mobileNumber: member.mobileNumber || "", 
+            societyName: member.societyName || "", 
+            societyId: Number(memberSocietyId) 
+          });
+          
           successfulImports++;
-        } catch (e) {
-          console.warn("[MemberController] Bulk import item failed:", e);
+        } catch (e: any) {
+          console.error(`[MemberController] Import failed for row ${i + 1} (${member.name}):`, e.message);
+          errors.push(`Row ${i + 1} (${member.name || 'Unnamed'}): ${e.message}`);
+          failedImports++;
         }
       }
-      return Response.json({ success: true, message: `Successfully imported ${successfulImports} members.` });
+
+      console.log(`[MemberController] Import complete. Success: ${successfulImports}, Failed: ${failedImports}`);
+
+      return Response.json({ 
+        success: true, 
+        message: `Import completed. ${successfulImports} saved, ${failedImports} failed.`,
+        successful: successfulImports,
+        failed: failedImports,
+        errors: errors
+      });
     } catch (error: any) {
-      console.error("[MemberController] Bulk create failed:", error);
+      console.error("[MemberController] Critical bulk create failure:", error);
       return Response.json({ success: false, message: error.message || "Failed to import members" }, { status: 500 });
     }
   }
+
 };

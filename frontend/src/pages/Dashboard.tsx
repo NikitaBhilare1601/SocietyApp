@@ -210,24 +210,6 @@ const Dashboard = () => {
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-foreground md:h-9 md:w-9"
-              onClick={handleLogout}
-              title="Logout"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center gap-3 pl-1">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm border border-primary/20">
-                {getInitials(currentUser.fullName || currentUser.email)}
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium text-foreground leading-none">{currentUser.fullName || currentUser.email}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">{currentUser.roleName}</p>
-              </div>
-            </div>
           </div>
         </header>
 

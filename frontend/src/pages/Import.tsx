@@ -102,8 +102,11 @@ const Import = () => {
           const mappedData = rows.map(row => {
             const rowData: { [key: string]: string | number | undefined } = {};
             headers.forEach((header, index) => {
-              rowData[header.trim()] = row[index];
+              const val = row[index];
+              const trimmedHeader = header.trim();
+              rowData[trimmedHeader] = (val !== undefined && val !== null) ? val : "";
             });
+
             return rowData;
           });
           console.log("Data mapped:", mappedData);
@@ -129,8 +132,8 @@ const Import = () => {
 
             return {
               name: getValue(row, ["Member Name", "MemberName", "Name", "Member"]),
-              societyId: user.societyId, // Use societyId from localStorage
-              societyName: getValue(row, ["Society", "Society Name"]),
+              societyId: user.societyId || undefined,
+              societyName: getValue(row, ["Society", "Society Name"]) || user.societyName || "",
               wingName: getValue(row, ["Wing", "Wing Name"]),
               flatNumber: getValue(row, ["Flat", "Flat Number", "Flat No"]),
               memberType: getValue(row, ["Type", "Member Type"]),
@@ -190,20 +193,29 @@ const Import = () => {
       };
       console.log("Headers being sent with fetch (direct):", headers);
 
-      const response = await fetch("/api/members/bulk-create", { // Assuming this is the endpoint
+      const response = await fetch("/api/members/bulk-create", {
         method: "POST",
         headers: headers,
         body: JSON.stringify(dataToImport),
       });
 
-      if (response.ok) {
-        success("Data saved successfully! Redirecting to members tab...");
+      const result = await response.json();
+      console.log("[Import] Server response:", result);
+
+      if (response.ok && result.success) {
+        if (result.failed > 0) {
+          const firstError = result.errors && result.errors.length > 0 ? result.errors[0] : "Check member details for mandatory fields.";
+          toastError(`Partial Success: ${result.successful} saved, ${result.failed} failed. ${firstError}`);
+        } else {
+          success(result.message || "Data saved successfully! Redirecting to members tab...");
+        }
+        
+        // Even on partial success, we clear and navigate because data was saved
         clearPreview();
-        navigate("/members"); // Navigate to members tab
+        setTimeout(() => navigate("/members"), 1500);
       } else {
-        const errorData = await response.json();
-        toastError(errorData.error || "Failed to save data.");
-        console.error("Save failed with server error:", errorData);
+        toastError(result.message || "Failed to save data.");
+        console.error("Save failed with server error:", result);
       }
     } catch (error: any) {
       toastError(error.message || "An unexpected error occurred during save.");
@@ -211,6 +223,7 @@ const Import = () => {
     } finally {
       setLoading(false);
     }
+
   };
 
   return (
@@ -231,7 +244,7 @@ const Import = () => {
           <ScrollText className="w-5 h-5 text-primary" />
         </header>
         <div className="p-4 md:p-8">
-          <Card className="w-full max-w-4xl mx-auto bg-card border-border shadow-md overflow-hidden">
+          <Card className="w-full max-w-7xl mx-auto bg-card border-border shadow-md">
             <CardHeader className="border-b border-border/50 pb-6">
               <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <Upload className="w-6 h-6 text-primary" />
@@ -239,8 +252,10 @@ const Import = () => {
               </CardTitle>
               <CardDescription className="text-muted-foreground">Upload an Excel or CSV file to import member information accurately into the system.</CardDescription>
             </CardHeader>
-            <CardContent className="pt-8">
-              <div className="grid w-full items-center gap-8">
+            <CardContent className="pt-8 pb-32">
+              <div className="flex flex-col w-full gap-8 overflow-x-hidden">
+
+                {/* ... existing steps ... */}
                 <div className="bg-muted/30 p-6 rounded-xl border border-border/50">
                   <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
                     <Download className="w-4 h-4 text-primary" />
@@ -287,17 +302,28 @@ const Import = () => {
                 </div>
 
                 {showPreview && previewData && (
-                  <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-foreground">Data Preview (First 10 rows)</h3>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-bold">
-                        {dataToImport?.length} Rows Found
-                      </span>
+                  <div className="mt-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-bold text-foreground">Data Preview (First 10 rows)</h3>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                          {dataToImport?.length} Rows Found
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <Button variant="outline" size="sm" onClick={clearPreview} disabled={loading} className="h-9">
+                          Clear
+                        </Button>
+                        <Button onClick={handleSave} size="sm" disabled={loading || !dataToImport} className="h-9 shadow-lg shadow-primary/20 min-w-[100px]">
+                          {loading ? "Saving..." : "Save Data"}
+                        </Button>
+                      </div>
                     </div>
-                    <div className="border border-border rounded-xl overflow-hidden shadow-inner bg-background/50">
-                      <ImportPreviewTable data={previewData} />
-                    </div>
-                    <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
+                    
+                    <ImportPreviewTable data={previewData} />
+
+                    <div className="flex flex-col sm:flex-row justify-end gap-3 mt-10">
                       <Button variant="outline" onClick={clearPreview} disabled={loading} className="border-border">
                         Clear Preview
                       </Button>
@@ -309,6 +335,7 @@ const Import = () => {
                 )}
               </div>
             </CardContent>
+
           </Card>
         </div>
       </div>

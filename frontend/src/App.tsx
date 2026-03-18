@@ -11,6 +11,7 @@ import Wings from "./pages/Wings";
 import ImportPage from "./pages/Import";
 import Settings from "./pages/Settings";
 import Logs from "./pages/Logs";
+import Profile from "./pages/Profile";
 
 
 import { ToastProvider } from "./components/ui/Toast";
@@ -39,6 +40,7 @@ export function App() {
 
           <Route path="/import" element={isAuthenticated ? <ImportPage /> : <Navigate to="/" />} />
           <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/" />} />
+          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/" />} />
         </Routes>
       </Router>
     </ToastProvider>

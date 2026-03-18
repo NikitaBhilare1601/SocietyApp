@@ -127,7 +127,7 @@ export const AuthController = {
 
   async createUser(req: any) {
     try {
-      const { fullName, email, password, roleId, status, societyId, memberId, mobileNumber } = await req.json();
+      const { fullName, email, password, roleId, status, societyId, memberId, mobileNumber, address } = await req.json();
       
       const user = await User.create({
         fullName,
@@ -138,7 +138,8 @@ export const AuthController = {
         status,
         societyId: societyId || null,
         memberId: memberId || null,
-        mobileNumber: mobileNumber || null
+        mobileNumber: mobileNumber || null,
+        address: address || null
       });
 
       const actor = getActorFromHeaders(req);
@@ -158,7 +159,7 @@ export const AuthController = {
   async updateUser(req: any) {
     try {
       const id = req.params.id;
-      const { fullName, email, roleId, status, societyId, memberId, password, mobileNumber } = await req.json();
+      const { fullName, email, roleId, status, societyId, memberId, password, mobileNumber, address, profilePicture } = await req.json();
       
       const existingUser = await User.findByPk(id);
       if (!existingUser) return Response.json({ success: false, message: "User not found" }, { status: 404 });
@@ -171,7 +172,9 @@ export const AuthController = {
         status,
         societyId: societyId || null,
         memberId: memberId || null,
-        mobileNumber: mobileNumber || null
+        mobileNumber: mobileNumber || null,
+        address: address || null,
+        profilePicture: profilePicture || null
       };
 
       if (password) {

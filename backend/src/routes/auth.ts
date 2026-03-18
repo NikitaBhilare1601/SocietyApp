@@ -1,8 +1,12 @@
 import { AuthController } from "../controllers/auth";
+import { UploadController } from "../controllers/upload";
 
 export const authRoutes: Record<string, Record<string, (req: any, params?: any) => Response | Promise<Response>>> = {
   "/api/login": {
     POST: AuthController.login
+  },
+  "/api/upload": {
+    POST: UploadController.upload
   },
   "/api/roles": {
     GET: AuthController.getRoles,

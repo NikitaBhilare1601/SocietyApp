@@ -11,6 +11,8 @@ export class User extends Model {
   declare societyId?: number;
   declare memberId?: number;
   declare mobileNumber?: string;
+  declare address?: string;
+  declare profilePicture?: string;
   declare status: string;
   
   declare readonly createdAt: Date;
@@ -55,6 +57,14 @@ User.init(
       allowNull: true,
     },
     mobileNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    profilePicture: {
       type: DataTypes.STRING,
       allowNull: true,
     },
