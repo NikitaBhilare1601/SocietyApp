@@ -1,0 +1,14 @@
+--- USERS ---
+U_ID: 1 | Email: admin@society.com | Role: 1 | Soc: null
+U_ID: 2 | Email: secretary@society.com | Role: 2 | Soc: 1
+
+--- ROLES ---
+R_ID: 3 | Name: Member
+R_ID: 2 | Name: Society Admin
+R_ID: 1 | Name: Super Admin
+
+--- MEMBERS ---
+M_ID: 1 | Name: Test Member | Soc: 1 | SocName: Demo Society
+M_ID: 2 | Name: Watchman | Soc: 1 | SocName: Demo Society
+M_ID: 3 | Name: Nikita | Soc: 1 | SocName: Demo Society
+M_ID: 4 | Name: Nikita | Soc: 1 | SocName: Demo Society
